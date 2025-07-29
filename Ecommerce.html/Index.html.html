@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple E-commerce Store</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* Light blue-gray background */
+        }
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+    </style>
+</head>
+<body class="antialiased text-gray-800">
+
+    <!-- Header -->
+    <header class="bg-white shadow-md py-4 px-6 md:px-10 sticky top-0 z-50">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-3xl font-bold text-indigo-600">MyShop</h1>
+            <nav class="space-x-4">
+                <button id="cart-button" class="relative bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                    Shopping Cart
+                    <span id="cart-count" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">0</span>
+                </button>
+                <button id="login-register-button" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                    Login/Register
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="container mx-auto p-6 md:p-10 grid grid-cols-1 md:grid-cols-3 gap-8">
+
+        <!-- Product Listings -->
+        <section class="md:col-span-2 bg-white p-6 rounded-xl shadow-lg">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-6 border-b pb-3">Products</h2>
+            <div id="product-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Product cards will be injected here by JavaScript -->
+            </div>
+        </section>
+
+        <!-- Shopping Cart -->
+        <aside class="md:col-span-1 bg-white p-6 rounded-xl shadow-lg h-fit sticky top-24">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-6 border-b pb-3">Shopping Cart</h2>
+            <div id="cart-items" class="mb-4 max-h-96 overflow-y-auto">
+                <p id="empty-cart-message" class="text-gray-500 text-center py-4">Your cart is empty.</p>
+                <!-- Cart items will be injected here by JavaScript -->
+            </div>
+            <div class="border-t pt-4 flex justify-between items-center">
+                <span class="text-lg font-bold text-gray-700">Total:</span>
+                <span id="cart-total" class="text-xl font-extrabold text-indigo-600">$0.00</span>
+            </div>
+            <button id="checkout-button" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-lg mt-6 shadow-md transition duration-300 ease-in-out transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                Proceed to Checkout
+            </button>
+        </aside>
+
+    </main>
+
+    <!-- Product Details Modal -->
+    <div id="product-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-2xl transform transition-all duration-300 scale-95 opacity-0" id="modal-content-wrapper">
+            <div class="flex justify-between items-center mb-6 border-b pb-4">
+                <h3 id="modal-product-name" class="text-3xl font-bold text-gray-800"></h3>
+                <button id="close-modal" class="text-gray-500 hover:text-gray-700 text-3xl font-semibold">&times;</button>
+            </div>
+            <div class="md:flex gap-6">
+                <div class="md:w-1/2 mb-6 md:mb-0">
+                    <img id="modal-product-image" src="" alt="Product Image" class="w-full h-64 object-cover rounded-lg shadow-md mb-4">
+                    <p id="modal-product-price" class="text-2xl font-bold text-indigo-600 mb-2"></p>
+                </div>
+                <div class="md:w-1/2">
+                    <p id="modal-product-description" class="text-gray-600 leading-relaxed mb-6"></p>
+                    <button id="add-to-cart-modal" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                        Add to Cart
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login/Register Modal -->
+    <div id="auth-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md transform transition-all duration-300 scale-95 opacity-0" id="auth-modal-content-wrapper">
+            <div class="flex justify-between items-center mb-6 border-b pb-4">
+                <h3 id="auth-modal-title" class="text-3xl font-bold text-gray-800">Login / Register</h3>
+                <button id="close-auth-modal" class="text-gray-500 hover:text-gray-700 text-3xl font-semibold">&times;</button>
+            </div>
+            <form id="auth-form" class="space-y-4">
+                <div>
+                    <label for="email" class="block text-gray-700 text-sm font-bold mb-2">Email:</label>
+                    <input type="email" id="email" name="email" class="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="your@example.com" required>
+                </div>
+                <div>
+                    <label for="password" class="block text-gray-700 text-sm font-bold mb-2">Password:</label>
+                    <input type="password" id="password" name="password" class="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 mb-3 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="********" required>
+                </div>
+                <button type="submit" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                    Login
+                </button>
+                <button type="button" id="toggle-register" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 mt-2">
+                    Switch to Register
+                </button>
+            </form>
+            <p id="auth-message" class="text-center mt-4 text-sm text-green-600 hidden"></p>
+        </div>
+    </div>
+
+    <!-- Message Box (for alerts) -->
+    <div id="message-box" class="fixed bottom-6 right-6 bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg hidden z-50 transition-transform transform translate-y-full duration-300 ease-out">
+        <p id="message-text"></p>
+    </div>
+
+    <script>
+        // Mock product data (would come from a backend API in a real app)
+        const products = [
+            {
+                id: 1,
+                name: "Wireless Bluetooth Headphones",
+                price: 59.99,
+                image: "https://placehold.co/400x300/e0e7ff/4338ca?text=Headphones",
+                description: "Experience crystal-clear audio with these comfortable wireless headphones. Featuring long-lasting battery life and noise cancellation.",
+                category: "Electronics"
+            },
+            {
+                id: 2,
+                name: "Smartwatch with Heart Rate Monitor",
+                price: 129.99,
+                image: "https://placehold.co/400x300/ffe4e6/be185d?text=Smartwatch",
+                description: "Track your fitness, receive notifications, and monitor your health with this sleek and powerful smartwatch.",
+                category: "Electronics"
+            },
+            {
+                id: 3,
+                name: "Ergonomic Office Chair",
+                price: 249.99,
+                image: "https://placehold.co/400x300/e0f2fe/0284c7?text=Office+Chair",
+                description: "Boost your productivity and comfort with this ergonomic office chair designed for long hours of work.",
+                category: "Home & Office"
+            },
+            {
+                id: 4,
+                name: "Portable Espresso Maker",
+                price: 45.00,
+                image: "https://placehold.co/400x300/fff7ed/ea580c?text=Espresso+Maker",
+                description: "Enjoy your favorite espresso on the go with this compact and easy-to-use portable maker.",
+                category: "Kitchen"
+            },
+            {
+                id: 5,
+                name: "Organic Cotton T-Shirt",
+                price: 25.50,
+                image: "https://placehold.co/400x300/dcfce7/16a34a?text=T-Shirt",
+                description: "Soft, breathable, and sustainably made organic cotton t-shirt for everyday comfort.",
+                category: "Apparel"
+            },
+            {
+                id: 6,
+                name: "Noise-Cancelling Earbuds",
+                price: 89.99,
+                image: "https://placehold.co/400x300/f0f9ff/0c4a6e?text=Earbuds",
+                description: "Immerse yourself in your music with these advanced noise-cancelling earbuds, perfect for travel and daily commute.",
+                category: "Electronics"
+            },
+            {
+                id: 7,
+                name: "Adjustable Standing Desk",
+                price: 399.00,
+                image: "https://placehold.co/400x300/fef2f2/ef4444?text=Standing+Desk",
+                description: "Transform your workspace with this electric adjustable standing desk, promoting better posture and focus.",
+                category: "Home & Office"
+            },
+            {
+                id: 8,
+                name: "Professional Chef Knife Set",
+                price: 150.00,
+                image: "https://placehold.co/400x300/ecfdf5/047857?text=Knife+Set",
+                description: "A complete set of high-quality, razor-sharp knives for every culinary task.",
+                category: "Kitchen"
+            }
+        ];
+
+        let cart = []; // Array to store items in the cart
+
+        // Get DOM elements
+        const productListDiv = document.getElementById('product-list');
+        const cartItemsDiv = document.getElementById('cart-items');
+        const cartTotalSpan = document.getElementById('cart-total');
+        const cartCountSpan = document.getElementById('cart-count');
+        const emptyCartMessage = document.getElementById('empty-cart-message');
+        const checkoutButton = document.getElementById('checkout-button');
+        const cartButton = document.getElementById('cart-button');
+        const loginRegisterButton = document.getElementById('login-register-button');
+
+        // Product Details Modal elements
+        const productModal = document.getElementById('product-modal');
+        const modalContentWrapper = document.getElementById('modal-content-wrapper');
+        const closeModalButton = document.getElementById('close-modal');
+        const modalProductName = document.getElementById('modal-product-name');
+        const modalProductImage = document.getElementById('modal-product-image');
+        const modalProductPrice = document.getElementById('modal-product-price');
+        const modalProductDescription = document.getElementById('modal-product-description');
+        const addToCartModalButton = document.getElementById('add-to-cart-modal');
+
+        // Auth Modal elements
+        const authModal = document.getElementById('auth-modal');
+        const authModalContentWrapper = document.getElementById('auth-modal-content-wrapper');
+        const closeAuthModalButton = document.getElementById('close-auth-modal');
+        const authForm = document.getElementById('auth-form');
+        const authModalTitle = document.getElementById('auth-modal-title');
+        const toggleRegisterButton = document.getElementById('toggle-register');
+        const authMessage = document.getElementById('auth-message');
+
+        // Message Box elements
+        const messageBox = document.getElementById('message-box');
+        const messageText = document.getElementById('message-text');
+
+        // Function to display messages
+        function showMessage(message, type = 'info') {
+            messageText.textContent = message;
+            messageBox.className = `fixed bottom-6 right-6 px-6 py-3 rounded-lg shadow-lg z-50 transition-transform transform duration-300 ease-out`;
+
+            if (type === 'success') {
+                messageBox.classList.add('bg-green-600');
+            } else if (type === 'error') {
+                messageBox.classList.add('bg-red-600');
+            } else {
+                messageBox.classList.add('bg-blue-600');
+            }
+
+            messageBox.classList.remove('hidden', 'translate-y-full');
+            messageBox.classList.add('translate-y-0');
+
+            setTimeout(() => {
+                messageBox.classList.remove('translate-y-0');
+                messageBox.classList.add('translate-y-full');
+                setTimeout(() => {
+                    messageBox.classList.add('hidden');
+                }, 300); // Allow transition to complete before hiding
+            }, 3000); // Message disappears after 3 seconds
+        }
+
+        // Function to render product cards
+        function renderProducts() {
+            productListDiv.innerHTML = ''; // Clear existing products
+            products.forEach(product => {
+                const productCard = document.createElement('div');
+                productCard.className = 'bg-gray-50 rounded-lg shadow-md overflow-hidden transform transition duration-300 hover:scale-105 hover:shadow-xl cursor-pointer flex flex-col';
+                productCard.innerHTML = `
+                    <img src="${product.image}" alt="${product.name}" class="w-full h-48 object-cover">
+                    <div class="p-4 flex-grow flex flex-col">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-2">${product.name}</h3>
+                        <p class="text-gray-600 text-sm mb-3 flex-grow">${product.description.substring(0, 70)}...</p>
+                        <div class="flex justify-between items-center mt-auto pt-2 border-t border-gray-200">
+                            <span class="text-lg font-bold text-indigo-600">$${product.price.toFixed(2)}</span>
+                            <button class="add-to-cart-btn bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-200" data-product-id="${product.id}">
+                                Add to Cart
+                            </button>
+                        </div>
+                    </div>
+                `;
+                productListDiv.appendChild(productCard);
+
+                // Add event listener to view product details
+                productCard.querySelector('img').addEventListener('click', () => showProductDetails(product.id));
+                productCard.querySelector('h3').addEventListener('click', () => showProductDetails(product.id));
+                productCard.querySelector('p.text-gray-600').addEventListener('click', () => showProductDetails(product.id));
+
+                // Add event listener to "Add to Cart" button on the card
+                productCard.querySelector('.add-to-cart-btn').addEventListener('click', (event) => {
+                    event.stopPropagation(); // Prevent modal from opening
+                    addToCart(product.id);
+                });
+            });
+        }
+
+        // Function to render cart items
+        function renderCart() {
+            cartItemsDiv.innerHTML = ''; // Clear existing cart items
+            if (cart.length === 0) {
+                emptyCartMessage.classList.remove('hidden');
+                checkoutButton.disabled = true;
+            } else {
+                emptyCartMessage.classList.add('hidden');
+                checkoutButton.disabled = false;
+                cart.forEach(item => {
+                    const product = products.find(p => p.id === item.productId);
+                    if (product) {
+                        const cartItemDiv = document.createElement('div');
+                        cartItemDiv.className = 'flex items-center justify-between py-3 border-b border-gray-200 last:border-b-0';
+                        cartItemDiv.innerHTML = `
+                            <div class="flex items-center flex-grow">
+                                <img src="${product.image}" alt="${product.name}" class="w-16 h-16 object-cover rounded-md mr-4">
+                                <div>
+                                    <h4 class="font-semibold text-gray-800">${product.name}</h4>
+                                    <p class="text-sm text-gray-600">$${product.price.toFixed(2)} x ${item.quantity}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center">
+                                <button class="quantity-btn bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded-md text-sm mr-1" data-product-id="${product.id}" data-action="decrease">-</button>
+                                <span class="font-medium text-gray-800">${item.quantity}</span>
+                                <button class="quantity-btn bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded-md text-sm ml-1" data-product-id="${product.id}" data-action="increase">+</button>
+                                <button class="remove-from-cart-btn bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-1 px-2 rounded-md ml-4 transition duration-200" data-product-id="${product.id}">Remove</button>
+                            </div>
+                        `;
+                        cartItemsDiv.appendChild(cartItemDiv);
+                    }
+                });
+            }
+            updateCartSummary();
+        }
+
+        // Function to add a product to the cart
+        function addToCart(productId) {
+            const product = products.find(p => p.id === productId);
+            if (product) {
+                const existingItem = cart.find(item => item.productId === productId);
+                if (existingItem) {
+                    existingItem.quantity++;
+                } else {
+                    cart.push({ productId: productId, quantity: 1 });
+                }
+                renderCart();
+                showMessage(`${product.name} added to cart!`, 'success');
+            }
+        }
+
+        // Function to remove a product from the cart
+        function removeFromCart(productId) {
+            cart = cart.filter(item => item.productId !== productId);
+            renderCart();
+            showMessage('Item removed from cart.', 'info');
+        }
+
+        // Function to update item quantity in cart
+        function updateQuantity(productId, action) {
+            const item = cart.find(item => item.productId === productId);
+            if (item) {
+                if (action === 'increase') {
+                    item.quantity++;
+                } else if (action === 'decrease') {
+                    item.quantity--;
+                    if (item.quantity <= 0) {
+                        removeFromCart(productId); // Remove if quantity drops to 0 or less
+                        return; // Exit to prevent further processing for this item
+                    }
+                }
+                renderCart();
+            }
+        }
+
+        // Function to update cart total and count
+        function updateCartSummary() {
+            const total = cart.reduce((sum, item) => {
+                const product = products.find(p => p.id === item.productId);
+                return sum + (product ? product.price * item.quantity : 0);
+            }, 0);
+            cartTotalSpan.textContent = `$${total.toFixed(2)}`;
+            cartCountSpan.textContent = cart.reduce((sum, item) => sum + item.quantity, 0);
+        }
+
+        // Function to show product details modal
+        function showProductDetails(productId) {
+            const product = products.find(p => p.id === productId);
+            if (product) {
+                modalProductName.textContent = product.name;
+                modalProductImage.src = product.image;
+                modalProductPrice.textContent = `$${product.price.toFixed(2)}`;
+                modalProductDescription.textContent = product.description;
+                addToCartModalButton.dataset.productId = product.id; // Set product ID for add to cart button
+
+                productModal.classList.remove('hidden');
+                setTimeout(() => {
+                    modalContentWrapper.classList.remove('scale-95', 'opacity-0');
+                    modalContentWrapper.classList.add('scale-100', 'opacity-100');
+                }, 10); // Small delay for animation
+            }
+        }
+
+        // Function to hide product details modal
+        function hideProductDetails() {
+            modalContentWrapper.classList.remove('scale-100', 'opacity-100');
+            modalContentWrapper.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                productModal.classList.add('hidden');
+            }, 300); // Match transition duration
+        }
+
+        // Function to show auth modal
+        function showAuthModal(isRegister = false) {
+            authModalTitle.textContent = isRegister ? 'Register' : 'Login';
+            toggleRegisterButton.textContent = isRegister ? 'Switch to Login' : 'Switch to Register';
+            authForm.querySelector('button[type="submit"]').textContent = isRegister ? 'Register' : 'Login';
+            authMessage.classList.add('hidden'); // Hide message on open
+            authModal.classList.remove('hidden');
+            setTimeout(() => {
+                authModalContentWrapper.classList.remove('scale-95', 'opacity-0');
+                authModalContentWrapper.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        // Function to hide auth modal
+        function hideAuthModal() {
+            authModalContentWrapper.classList.remove('scale-100', 'opacity-100');
+            authModalContentWrapper.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                authModal.classList.add('hidden');
+            }, 300);
+        }
+
+        // Event Listeners
+
+        // Delegate events for cart item actions (remove, quantity change)
+        cartItemsDiv.addEventListener('click', (event) => {
+            if (event.target.classList.contains('remove-from-cart-btn')) {
+                const productId = parseInt(event.target.dataset.productId);
+                removeFromCart(productId);
+            } else if (event.target.classList.contains('quantity-btn')) {
+                const productId = parseInt(event.target.dataset.productId);
+                const action = event.target.dataset.action;
+                updateQuantity(productId, action);
+            }
+        });
+
+        // Checkout button click handler
+        checkoutButton.addEventListener('click', () => {
+            if (cart.length > 0) {
+                showMessage('Order processed successfully! Thank you for your purchase.', 'success');
+                cart = []; // Clear the cart
+                renderCart(); // Re-render to show empty cart
+            } else {
+                showMessage('Your cart is empty. Add some products first!', 'info');
+            }
+        });
+
+        // Cart button in header
+        cartButton.addEventListener('click', () => {
+            // In a real app, this might scroll to cart or open a dedicated cart page/modal
+            // For this demo, it simply highlights the cart section (already visible)
+            showMessage('Scroll down to view your shopping cart!', 'info');
+        });
+
+        // Login/Register button in header
+        loginRegisterButton.addEventListener('click', () => showAuthModal(false));
+
+        // Close product modal
+        closeModalButton.addEventListener('click', hideProductDetails);
+        productModal.addEventListener('click', (event) => {
+            if (event.target === productModal) { // Close only if clicking outside the modal content
+                hideProductDetails();
+            }
+        });
+
+        // Add to cart from modal
+        addToCartModalButton.addEventListener('click', (event) => {
+            const productId = parseInt(event.target.dataset.productId);
+            addToCart(productId);
+            hideProductDetails(); // Close modal after adding to cart
+        });
+
+        // Close auth modal
+        closeAuthModalButton.addEventListener('click', hideAuthModal);
+        authModal.addEventListener('click', (event) => {
+            if (event.target === authModal) { // Close only if clicking outside the modal content
+                hideAuthModal();
+            }
+        });
+
+        // Toggle between Login and Register forms
+        toggleRegisterButton.addEventListener('click', () => {
+            const isRegister = authModalTitle.textContent === 'Login';
+            showAuthModal(isRegister);
+        });
+
+        // Handle Auth Form Submission (simulated)
+        authForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const isRegister = authModalTitle.textContent === 'Register';
+
+            if (isRegister) {
+                // Simulate registration
+                console.log('Registering:', { email, password });
+                authMessage.textContent = `Registration successful for ${email}! You can now login.`;
+                authMessage.classList.remove('hidden', 'text-red-600');
+                authMessage.classList.add('text-green-600');
+                // After successful registration, switch to login form
+                setTimeout(() => showAuthModal(false), 1500);
+            } else {
+                // Simulate login
+                console.log('Logging in:', { email, password });
+                if (email === 'user@example.com' && password === 'password123') {
+                    authMessage.textContent = `Welcome, ${email}! You are now logged in.`;
+                    authMessage.classList.remove('hidden', 'text-red-600');
+                    authMessage.classList.add('text-green-600');
+                    setTimeout(hideAuthModal, 1500);
+                } else {
+                    authMessage.textContent = 'Invalid email or password.';
+                    authMessage.classList.remove('hidden', 'text-green-600');
+                    authMessage.classList.add('text-red-600');
+                }
+            }
+            authForm.reset(); // Clear form fields
+        });
+
+        // Initial render
+        document.addEventListener('DOMContentLoaded', () => {
+            renderProducts();
+            renderCart();
+        });
+    </script>
+</body>
+</html>
